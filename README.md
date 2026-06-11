@@ -2,7 +2,30 @@
 
 ## Quickstart From Docker Hub
 
-From the project directory you want Hermes to work in, create a local Telegram env file:
+From the project directory you want Hermes to work in, set the OpenAI secret once on the host:
+
+```bash
+printf '%s\n' "$OPENAI_API_KEY" | sbx secret set -g openai
+```
+
+Run Hermes using the published kit:
+
+```bash
+sbx run \
+  --kit docker.io/olegselajev241/sbx-hermes-kit:latest \
+  --name hermes \
+  hermes .
+```
+
+Reattach later:
+
+```bash
+sbx run hermes
+```
+
+## Telegram Quickstart From Docker Hub
+
+Create a local Telegram env file in the same project directory:
 
 ```bash
 mkdir -p .sbx
@@ -13,13 +36,7 @@ TELEGRAM_HOME_CHANNEL=<your-numeric-telegram-user-id-or-chat-id>
 EOF
 ```
 
-Set the OpenAI secret once on the host:
-
-```bash
-printf '%s\n' "$OPENAI_API_KEY" | sbx secret set -g openai
-```
-
-Run Hermes with Telegram using the published kits:
+Run Hermes with Telegram using both published kits:
 
 ```bash
 sbx run \
