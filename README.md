@@ -226,6 +226,26 @@ docker.io/<DOCKERHUB_USERNAME>/sbx-hermes-telegram-kit
 
 The image-and-kits workflow uses the built-in `GITHUB_TOKEN` to commit the updated image reference back to the repository. In GitHub repository settings, Actions must have **Read and write permissions**. If branch protection blocks bot pushes, use a manual PR flow or adjust the protection rule.
 
+Trigger kits-only publishing:
+
+```bash
+gh workflow run "Publish Kits" \
+  --field kit_version=0.16.0 \
+  --field push_latest=true \
+  --field sbx_release=v0.32.0
+```
+
+Trigger a Hermes image update plus kit publishing:
+
+```bash
+gh workflow run "Release Hermes Image And Kits" \
+  --field hermes_version=0.16.0 \
+  --field image_tag=0.16.0 \
+  --field platforms=linux/amd64,linux/arm64 \
+  --field push_latest=true \
+  --field sbx_release=v0.32.0
+```
+
 Build and push:
 
 ```bash
