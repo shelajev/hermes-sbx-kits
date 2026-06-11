@@ -1,10 +1,10 @@
 # Hermes Telegram SBX Mixin
 
-This is a companion mixin for the sibling `hermes` agent kit. It does not install Hermes itself; combine it with the Hermes agent kit from the repository root:
+This is a companion mixin for Hermes agent kits. It does not install Hermes itself; combine it with either the provider-neutral `hermes` agent kit plus a provider mixin, or the `hermes-codex` agent kit.
 
 ```bash
 cd /Users/shelajev/ai-contrib/kits/core
-sbx run --kit ./hermes --kit ./hermes-telegram --name hermes-telegram-test hermes .
+sbx run --kit ./hermes-codex --kit ./hermes-telegram --name hermes-telegram-test hermes-codex .
 ```
 
 ## What This Mixin Does
@@ -28,11 +28,11 @@ cp ./hermes-telegram/sbx.env.example .sbx/.env
 $EDITOR .sbx/.env
 ```
 
-Then run both kits:
+Then run the Codex/OpenAI Hermes kit with the Telegram mixin:
 
 ```bash
 cd /Users/shelajev/ai-contrib/kits/core
-sbx run --kit ./hermes --kit ./hermes-telegram --name hermes-telegram-test hermes .
+sbx run --kit ./hermes-codex --kit ./hermes-telegram --name hermes-telegram-test hermes-codex .
 ```
 
 The startup hook sources `.sbx/.env` from the sandbox `WORKSPACE_DIR` and starts the Hermes gateway automatically.

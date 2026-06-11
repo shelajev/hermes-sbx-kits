@@ -41,6 +41,7 @@ commands:
           set -eu
 
           hermes_home="${HERMES_HOME:-$HOME/.hermes}"
+          hermes_bin="${HERMES_BIN:-/home/agent/.local/bin/hermes}"
           log_dir="$hermes_home/logs"
           log_file="$log_dir/telegram-gateway.log"
           env_file="$hermes_home/.env"
@@ -85,12 +86,16 @@ commands:
             exit 0
           fi
 
-          if pgrep -f 'hermes gateway run' >/dev/null 2>&1; then
+          if pgrep -af 'hermes gateway run' | grep -v 'pgrep -af' | grep -v 'sh -lc' >/dev/null 2>&1; then
             echo "Hermes Telegram mixin: gateway already running." >> "$log_file"
             exit 0
           fi
 
-          nohup hermes gateway run --replace --accept-hooks >> "$log_file" 2>&1 &
+          if command -v setsid >/dev/null 2>&1; then
+            setsid sh -c 'exec "$2" gateway run --replace --accept-hooks >> "$1" 2>&1' sh "$log_file" "$hermes_bin" </dev/null &
+          else
+            nohup "$hermes_bin" gateway run --replace --accept-hooks >> "$log_file" 2>&1 &
+          fi
           echo "Hermes Telegram mixin: started gateway as pid $!." >> "$log_file"
       user: "1000"
       description: "Start Hermes gateway when Telegram configuration exists"

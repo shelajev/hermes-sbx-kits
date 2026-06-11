@@ -1,8 +1,8 @@
 schemaVersion: "1"
 kind: agent
-name: hermes
-displayName: "Hermes Agent"
-description: "Run Nous Research Hermes Agent inside a Docker Sandbox with Hermes preinstalled in the image."
+name: hermes-codex
+displayName: "Hermes Codex Auth"
+description: "Run Hermes with OpenAI API key and Codex/OpenAI subscription OAuth auth."
 
 agent:
   image: "docker.io/olegselajev241/hermes-agent-sbx:latest"
@@ -13,8 +13,8 @@ agent:
       - |
         set -eu
         hermes_home="${HERMES_HOME:-/home/agent/.hermes}"
-        provider="${HERMES_INFERENCE_PROVIDER:-}"
-        model="${HERMES_INFERENCE_MODEL:-}"
+        provider="${HERMES_INFERENCE_PROVIDER:-openai-api}"
+        model="${HERMES_INFERENCE_MODEL:-gpt-5-mini}"
         config="$hermes_home/config.yaml"
 
         mkdir -p "$hermes_home"
@@ -34,12 +34,46 @@ environment:
     HERMES_HOME: "/home/agent/.hermes"
     IS_SANDBOX: "1"
     HERMES_TERMINAL_BACKEND: "local"
+    HERMES_INFERENCE_PROVIDER: "openai-api"
+    HERMES_INFERENCE_MODEL: "gpt-5-mini"
     NO_PROXY: "localhost,127.0.0.1,::1,gateway.docker.internal"
     no_proxy: "localhost,127.0.0.1,::1,gateway.docker.internal"
+  proxyManaged:
+    - OPENAI_API_KEY
+
+credentials:
+  sources:
+    openai:
+      env:
+        - OPENAI_API_KEY
+      file:
+        path: "~/.codex/auth.json"
+        parser: "json:OPENAI_API_KEY"
 
 network:
   allowedDomains:
+    - "api.openai.com:443"
+    - "openai.com:443"
+    - "auth.openai.com:443"
     - "portal.nousresearch.com:443"
     - "*.nousresearch.com:443"
     - "github.com:443"
     - "api.github.com:443"
+  serviceDomains:
+    api.openai.com: openai
+    openai.com: openai
+  serviceAuth:
+    openai:
+      headerName: Authorization
+      valueFormat: "Bearer %s"
+
+oauth:
+  service: openai
+  tokenEndpoint:
+    host: auth.openai.com
+    path: /oauth/token
+  sentinels:
+    accessToken: oai-oat01-proxy-managed
+    refreshToken: oai-ort01-proxy-managed
+  skipIfEnv:
+    - OPENAI_API_KEY

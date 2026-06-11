@@ -2,7 +2,7 @@
 
 ## Quickstart From Docker Hub
 
-From the project directory you want Hermes to work in, set the OpenAI secret once on the host:
+From the project directory you want Hermes to work in, set the OpenAI secret once on the host if you want API-key auth:
 
 ```bash
 printf '%s\n' "$OPENAI_API_KEY" | sbx secret set -g openai
@@ -12,9 +12,9 @@ Run Hermes using the published kit:
 
 ```bash
 sbx run \
-  --kit docker.io/olegselajev241/sbx-hermes-kit:latest \
+  --kit docker.io/olegselajev241/sbx-hermes-codex-kit:latest \
   --name hermes \
-  hermes .
+  hermes-codex .
 ```
 
 Reattach later:
@@ -40,10 +40,10 @@ Run Hermes with Telegram using both published kits:
 
 ```bash
 sbx run \
-  --kit docker.io/olegselajev241/sbx-hermes-kit:latest \
+  --kit docker.io/olegselajev241/sbx-hermes-codex-kit:latest \
   --kit docker.io/olegselajev241/sbx-hermes-telegram-kit:latest \
   --name hermes-telegram \
-  hermes .
+  hermes-codex .
 ```
 
 Reattach later:
@@ -59,17 +59,19 @@ sbx exec hermes-telegram hermes gateway status
 sbx exec hermes-telegram sh -lc 'tail -160 "$HERMES_HOME/logs/agent.log"'
 ```
 
-This repository contains two Docker Sandbox (SBX) kits:
+This repository contains Docker Sandbox (SBX) kits for Hermes:
 
-- `hermes`: the base Hermes agent kit.
+- `hermes`: the provider-neutral base Hermes agent kit.
+- `hermes-codex`: a Hermes agent kit that adds OpenAI API key and Codex/OpenAI subscription OAuth auth.
+- `hermes-openrouter`: a provider mixin that adds OpenRouter API-key auth.
 - `hermes-telegram`: a mixin kit that adds Telegram gateway support to the base Hermes agent.
 
-Use only `hermes` when you want the Hermes terminal agent. Use both kits when you want Hermes wired to a Telegram bot.
+Use `hermes-codex` for OpenAI/Codex auth. Use `hermes` plus `hermes-openrouter` for OpenRouter. Add `hermes-telegram` when you also want Hermes wired to a Telegram bot.
 
 ## Prerequisites
 
 - Docker Sandboxes (`sbx`) installed.
-- An OpenAI API key. This is the provider path we tested.
+- An OpenAI API key, Codex/OpenAI subscription OAuth, or an OpenRouter API key.
 - For Telegram mode: a Telegram bot token, your numeric Telegram user ID, and optionally a home chat/channel ID.
 
 The Hermes kit is configured to use this prebuilt image:
@@ -84,16 +86,20 @@ The kits are also published as OCI artifacts:
 
 ```text
 docker.io/olegselajev241/sbx-hermes-kit:latest
+docker.io/olegselajev241/sbx-hermes-codex-kit:latest
+docker.io/olegselajev241/sbx-hermes-openrouter-kit:latest
 docker.io/olegselajev241/sbx-hermes-telegram-kit:latest
 ```
 
-## Configure OpenAI
+## Configure OpenAI Or Codex
 
-Set the OpenAI service secret once on the host:
+For API-key auth, set the OpenAI service secret once on the host:
 
 ```bash
 printf '%s\n' "$OPENAI_API_KEY" | sbx secret set -g openai
 ```
+
+If no `OPENAI_API_KEY` is available, the `hermes-codex` kit can use the SBX OpenAI OAuth flow and the same proxy-managed sentinel contract used by the Codex kit.
 
 Check stored secrets:
 
@@ -101,11 +107,26 @@ Check stored secrets:
 sbx secret ls
 ```
 
-The Hermes kit defaults to:
+The `hermes-codex` kit defaults Hermes to:
 
 ```text
 HERMES_INFERENCE_PROVIDER=openai-api
 HERMES_INFERENCE_MODEL=gpt-5-mini
+```
+
+## Configure OpenRouter
+
+Set the OpenRouter service secret once on the host:
+
+```bash
+printf '%s\n' "$OPENROUTER_API_KEY" | sbx secret set -g openrouter
+```
+
+The `hermes-openrouter` mixin defaults Hermes to:
+
+```text
+HERMES_INFERENCE_PROVIDER=openrouter
+HERMES_INFERENCE_MODEL=anthropic/claude-3.5-haiku
 ```
 
 ## Run Hermes Only
@@ -113,13 +134,22 @@ HERMES_INFERENCE_MODEL=gpt-5-mini
 From this repository root:
 
 ```bash
-sbx run --kit ./hermes --name hermes-test hermes .
+sbx run --kit ./hermes-codex --name hermes-test hermes-codex .
 ```
 
 Or use the published kit directly:
 
 ```bash
-sbx run --kit docker.io/olegselajev241/sbx-hermes-kit:latest --name hermes-test hermes .
+sbx run \
+  --kit docker.io/olegselajev241/sbx-hermes-codex-kit:latest \
+  --name hermes-test \
+  hermes-codex .
+```
+
+For OpenRouter instead:
+
+```bash
+sbx run --kit ./hermes --kit ./hermes-openrouter --name hermes-openrouter-test hermes .
 ```
 
 For an existing sandbox:
@@ -149,17 +179,17 @@ TELEGRAM_HOME_CHANNEL=<your-numeric-telegram-user-id-or-chat-id>
 Then create and attach to the Telegram-enabled sandbox:
 
 ```bash
-sbx run --kit ./hermes --kit ./hermes-telegram --name hermes-telegram-test hermes .
+sbx run --kit ./hermes-codex --kit ./hermes-telegram --name hermes-telegram-test hermes-codex .
 ```
 
 Or use the published kits directly:
 
 ```bash
 sbx run \
-  --kit docker.io/olegselajev241/sbx-hermes-kit:latest \
+  --kit docker.io/olegselajev241/sbx-hermes-codex-kit:latest \
   --kit docker.io/olegselajev241/sbx-hermes-telegram-kit:latest \
   --name hermes-telegram-test \
-  hermes .
+  hermes-codex .
 ```
 
 The `hermes-telegram` mixin installs `python-telegram-bot[webhooks]`, loads `.sbx/.env` from `WORKSPACE_DIR`, and starts:
@@ -192,7 +222,7 @@ Send a DM to the Telegram bot. If it works, the log should show Telegram connect
 
 ## Notes On Secrets
 
-OpenAI is configured with SBX proxy-managed service secrets because the proxy can inject an `Authorization` header for `api.openai.com`.
+OpenAI and OpenRouter are configured with SBX proxy-managed service secrets because the proxy can inject an `Authorization` header for their API hosts. The `hermes-codex` kit also includes the OpenAI OAuth block for subscription auth when no API key is configured.
 
 Telegram is different: Telegram Bot API requests contain the bot token in the URL path, so SBX header injection is not suitable. Until SBX supports arbitrary env/secret injection, the Telegram mixin uses a local `.sbx/.env` file in the mounted workspace.
 
@@ -221,6 +251,8 @@ DOCKERHUB_TOKEN
 ```text
 docker.io/<DOCKERHUB_USERNAME>/hermes-agent-sbx
 docker.io/<DOCKERHUB_USERNAME>/sbx-hermes-kit
+docker.io/<DOCKERHUB_USERNAME>/sbx-hermes-codex-kit
+docker.io/<DOCKERHUB_USERNAME>/sbx-hermes-openrouter-kit
 docker.io/<DOCKERHUB_USERNAME>/sbx-hermes-telegram-kit
 ```
 

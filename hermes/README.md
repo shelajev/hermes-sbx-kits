@@ -4,14 +4,14 @@ This directory is a draft SBX agent kit for [Nous Research Hermes Agent](https:/
 
 ## Approach
 
-Bake Hermes into a custom agent image and keep `spec.yaml` lightweight. The image handles Python 3.11 and the Hermes package; the kit manifest handles entrypoint, network policy, and proxy-managed credentials. The image installs Hermes with the channel-neutral `anthropic,cli,mcp,web` extras; channel-specific dependencies belong in mixin kits such as `../hermes-telegram`. With the currently tested `sbx` CLI, sandbox persistence is controlled by the sandbox lifecycle; `agent.persistence` is not accepted in `spec.yaml`.
+Bake Hermes into a custom agent image and keep `spec.yaml` lightweight. The image handles Python 3.11 and the Hermes package; the base kit manifest handles the provider-neutral entrypoint and baseline network policy. Provider auth and provider-specific network policy belong in companion kits such as `../hermes-codex` and `../hermes-openrouter`. `../hermes-codex` is a standalone agent kit because SBX requires OAuth policy on agent kits; `../hermes-openrouter` is a mixin. Channel-specific dependencies belong in mixin kits such as `../hermes-telegram`. With the currently tested `sbx` CLI, sandbox persistence is controlled by the sandbox lifecycle; `agent.persistence` is not accepted in `spec.yaml`.
 
 The base image is `docker/sandbox-templates:shell-docker` because it already matches the sandbox runtime user model (`agent`, UID 1000) and includes `uv`, Node, and common developer tools. Hermes requires Python `>=3.11,<3.14`, so the Dockerfile installs Python 3.11 through `uv` rather than using the template's default `python3`.
 
 ## Files
 
 - `Dockerfile` builds `docker.io/olegselajev241/hermes-agent-sbx:latest` for publishing and `local/hermes-agent-sbx:0.16.0` for local development.
-- `spec.yaml` declares the Hermes agent kit entrypoint and network/credential policy.
+- `spec.yaml` declares the Hermes agent kit entrypoint and provider-neutral network policy.
 - `scripts/install-hermes.sh` is the detailed install script used by the image build.
 - `scripts/test-hermes.sh` builds the image and runs credential-free smoke tests, plus optional real model tests if API keys are present.
 
@@ -36,15 +36,15 @@ As of this working draft:
 - Docker image build and Docker one-shot smoke tests pass with `openai-api`.
 - `sbx kit validate .` passes with `sbx` v0.31.0-rc1.
 - Fresh SBX sandbox creation works after loading the image into the SBX template store.
-- The base image stays channel-neutral. Telegram dependencies are installed by the sibling `../hermes-telegram` mixin.
-- The kit bootstrap writes Hermes' own `model.provider` and `model.default` config when missing, so interactive Hermes defaults to `openai-api` / `gpt-5-mini` instead of falling back to OpenRouter.
-- Interactive `hello` succeeds through the SBX OpenAI credential proxy.
+- The base image stays provider-neutral and channel-neutral. OpenAI/Codex auth is provided by the sibling `../hermes-codex` agent kit; OpenRouter auth is added by the sibling `../hermes-openrouter` mixin; Telegram dependencies are installed by the sibling `../hermes-telegram` mixin.
+- The kit bootstrap writes Hermes' own `model.provider` and `model.default` config only when a provider mixin supplies `HERMES_INFERENCE_PROVIDER` or `HERMES_INFERENCE_MODEL`.
+- Interactive `hello` succeeds through the SBX OpenAI credential proxy when using the sibling `../hermes-codex` agent kit.
 - The kit overrides `NO_PROXY` / `no_proxy` without the bracketed `[::1]` entry because Hermes' auxiliary title-generation path can trip httpx URL parsing with `Invalid port: ':1]'` when the sandbox runtime injects `[::1]`.
 
-Fast interactive test from this directory:
+Fast interactive OpenRouter test from this directory:
 
 ```bash
-sbx run --kit . --name hermes-test hermes .
+sbx run --kit . --kit ../hermes-openrouter --name hermes-openrouter-test hermes .
 ```
 
 For an already-created sandbox, reattach without `--kit`:
@@ -163,7 +163,7 @@ This is the path to test the kit as an SBX agent kit rather than as a plain Dock
    own template image store, so `sbx create`/`sbx run` will otherwise fail with
    a pull error for `local/hermes-agent-sbx:0.16.0`.
 
-2. Set one host-side secret for the provider being tested.
+2. Set one host-side secret for the provider being tested when using API-key auth.
 
    With the current `sbx` CLI, secrets are stored by service name. Use global
    scope when you want the provider available to new sandboxes:
@@ -171,19 +171,17 @@ This is the path to test the kit as an SBX agent kit rather than as a plain Dock
    ```bash
    printf '%s\n' "$OPENAI_API_KEY" | sbx secret set -g openai
    # or:
-   printf '%s\n' "$ANTHROPIC_API_KEY" | sbx secret set -g anthropic
-   # or:
    printf '%s\n' "$OPENROUTER_API_KEY" | sbx secret set -g openrouter
    ```
 
-   You can also run `sbx secret set -g openai`, `sbx secret set -g anthropic`,
-   or `sbx secret set -g openrouter` and paste the value at the prompt. Check
-   what is already configured with `sbx secret ls`.
+   You can also run `sbx secret set -g openai` or `sbx secret set -g openrouter`
+   and paste the value at the prompt. Check what is already configured with
+   `sbx secret ls`.
 
-3. Run the kit from this directory:
+3. Run the kit with a provider mixin from this directory:
 
    ```bash
-   sbx run --kit . hermes .
+   sbx run --kit . --kit ../hermes-openrouter hermes .
    ```
 
    The kit entrypoint is `hermes --yolo`, so this should drop you into Hermes' terminal UI inside the sandbox. `--yolo` bypasses Hermes command approval prompts; remove it from `spec.yaml` if you want Hermes to ask before running risky commands.
@@ -191,12 +189,12 @@ This is the path to test the kit as an SBX agent kit rather than as a plain Dock
    For a named sandbox you can smoke-test non-interactively first:
 
    ```bash
-   sbx create --kit . --name hermes-kit-smoke hermes .
+   sbx create --kit . --kit ../hermes-openrouter --name hermes-kit-smoke hermes .
    sbx exec hermes-kit-smoke hermes --version
-   sbx exec hermes-kit-smoke hermes --ignore-user-config --provider openai-api \
-     -m "${OPENAI_MODEL:-gpt-5-mini}" \
+   sbx exec hermes-kit-smoke hermes --ignore-user-config --provider openrouter \
+     -m "${OPENROUTER_MODEL:-anthropic/claude-3.5-haiku}" \
      -z "Reply with exactly: hermes-ok"
-   sbx run --kit . hermes-kit-smoke
+   sbx run --kit . --kit ../hermes-openrouter hermes-kit-smoke
    ```
 
 4. Inside Hermes, configure a model if needed:
@@ -213,12 +211,9 @@ This is the path to test the kit as an SBX agent kit rather than as a plain Dock
 
    If the provider credential is proxy-managed by SBX, Hermes should be able to call that provider through the sandbox egress proxy without the raw secret being present in the sandbox environment.
 
-   This kit defaults interactive Hermes to `openai-api` with `gpt-5-mini` via
-   `HERMES_INFERENCE_PROVIDER` and `HERMES_INFERENCE_MODEL` in `spec.yaml`.
-   That matches the `openai` SBX service secret. If Hermes tries OpenRouter and
-   reports `HTTP 401: Missing Authentication header`, it is using the
-   `openrouter` provider and needs either `sbx secret set -g openrouter` or a
-   model/provider switch back to `openai-api`.
+   Provider mixins set initial interactive Hermes defaults via
+   `HERMES_INFERENCE_PROVIDER` and `HERMES_INFERENCE_MODEL`. The base kit does
+   not choose a provider on its own.
 
 5. Run a simple prompt first, for example:
 
@@ -251,10 +246,10 @@ hermes gateway setup
 hermes gateway run --replace --accept-hooks
 ```
 
-The sibling `../hermes-telegram` kit is a mixin intended to be combined with this agent kit:
+The sibling `../hermes-telegram` kit is a mixin intended to be combined with this agent kit and a provider mixin. For OpenAI/Codex auth, combine Telegram with the sibling `../hermes-codex` agent kit instead:
 
 ```bash
-sbx run --kit ../hermes --kit ../hermes-telegram --name hermes-telegram-test hermes .
+sbx run --kit ../hermes-codex --kit ../hermes-telegram --name hermes-telegram-test hermes-codex .
 ```
 
 The Telegram mixin installs `python-telegram-bot[webhooks]==22.6` into Hermes' tool environment and starts the gateway automatically when Telegram config is present.

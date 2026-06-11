@@ -23,10 +23,16 @@ copy_kit() {
 }
 
 copy_kit hermes
+copy_kit hermes-codex
+copy_kit hermes-openrouter
 copy_kit hermes-telegram
 
 sbx kit validate "$stage/hermes"
+sbx kit validate "$stage/hermes-codex"
+sbx kit validate "$stage/hermes-openrouter"
 sbx kit validate "$stage/hermes-telegram"
 
 sbx kit push "$stage/hermes" "docker.io/$namespace/sbx-hermes-kit:latest"
+sbx kit push "$stage/hermes-codex" "docker.io/$namespace/sbx-hermes-codex-kit:latest"
+sbx kit push "$stage/hermes-openrouter" "docker.io/$namespace/sbx-hermes-openrouter-kit:latest"
 sbx kit push "$stage/hermes-telegram" "docker.io/$namespace/sbx-hermes-telegram-kit:latest"

@@ -1,0 +1,28 @@
+schemaVersion: "1"
+kind: mixin
+name: hermes-openrouter
+displayName: "Hermes OpenRouter"
+description: "Extends the Hermes agent kit with OpenRouter API-key auth."
+
+environment:
+  variables:
+    HERMES_INFERENCE_PROVIDER: "openrouter"
+    HERMES_INFERENCE_MODEL: "anthropic/claude-3.5-haiku"
+  proxyManaged:
+    - OPENROUTER_API_KEY
+
+credentials:
+  sources:
+    openrouter:
+      env:
+        - OPENROUTER_API_KEY
+
+network:
+  allowedDomains:
+    - "openrouter.ai:443"
+  serviceDomains:
+    openrouter.ai: openrouter
+  serviceAuth:
+    openrouter:
+      headerName: Authorization
+      valueFormat: "Bearer %s"
