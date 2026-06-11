@@ -1,5 +1,47 @@
 # Hermes SBX Kits
 
+## Quickstart From Docker Hub
+
+From the project directory you want Hermes to work in, create a local Telegram env file:
+
+```bash
+mkdir -p .sbx
+cat > .sbx/.env <<'EOF'
+TELEGRAM_BOT_TOKEN=<your-telegram-bot-token>
+TELEGRAM_ALLOWED_USERS=<your-numeric-telegram-user-id>
+TELEGRAM_HOME_CHANNEL=<your-numeric-telegram-user-id-or-chat-id>
+EOF
+```
+
+Set the OpenAI secret once on the host:
+
+```bash
+printf '%s\n' "$OPENAI_API_KEY" | sbx secret set -g openai
+```
+
+Run Hermes with Telegram using the published kits:
+
+```bash
+sbx run \
+  --kit docker.io/olegselajev241/sbx-hermes-kit:latest \
+  --kit docker.io/olegselajev241/sbx-hermes-telegram-kit:latest \
+  --name hermes-telegram \
+  hermes .
+```
+
+Reattach later:
+
+```bash
+sbx run hermes-telegram
+```
+
+Check Telegram status and logs:
+
+```bash
+sbx exec hermes-telegram hermes gateway status
+sbx exec hermes-telegram sh -lc 'tail -160 "$HERMES_HOME/logs/agent.log"'
+```
+
 This repository contains two Docker Sandbox (SBX) kits:
 
 - `hermes`: the base Hermes agent kit.
@@ -20,6 +62,13 @@ docker.io/olegselajev241/hermes-agent-sbx:0.16.0
 ```
 
 Users of this repo should not need to build the image locally once that image is published.
+
+The kits are also published as OCI artifacts:
+
+```text
+docker.io/olegselajev241/sbx-hermes-kit:latest
+docker.io/olegselajev241/sbx-hermes-telegram-kit:latest
+```
 
 ## Configure OpenAI
 
@@ -50,6 +99,12 @@ From this repository root:
 sbx run --kit ./hermes --name hermes-test hermes .
 ```
 
+Or use the published kit directly:
+
+```bash
+sbx run --kit docker.io/olegselajev241/sbx-hermes-kit:latest --name hermes-test hermes .
+```
+
 For an existing sandbox:
 
 ```bash
@@ -78,6 +133,16 @@ Then create and attach to the Telegram-enabled sandbox:
 
 ```bash
 sbx run --kit ./hermes --kit ./hermes-telegram --name hermes-telegram-test hermes .
+```
+
+Or use the published kits directly:
+
+```bash
+sbx run \
+  --kit docker.io/olegselajev241/sbx-hermes-kit:latest \
+  --kit docker.io/olegselajev241/sbx-hermes-telegram-kit:latest \
+  --name hermes-telegram-test \
+  hermes .
 ```
 
 The `hermes-telegram` mixin installs `python-telegram-bot[webhooks]`, loads `.sbx/.env` from `WORKSPACE_DIR`, and starts:
@@ -126,6 +191,17 @@ Build and push:
 docker build -t docker.io/olegselajev241/hermes-agent-sbx:0.16.0 ./hermes
 docker push docker.io/olegselajev241/hermes-agent-sbx:0.16.0
 ```
+
+Push kit artifacts:
+
+```bash
+sbx kit push ./hermes docker.io/olegselajev241/sbx-hermes-kit:0.16.0
+sbx kit push ./hermes docker.io/olegselajev241/sbx-hermes-kit:latest
+sbx kit push ./hermes-telegram docker.io/olegselajev241/sbx-hermes-telegram-kit:0.16.0
+sbx kit push ./hermes-telegram docker.io/olegselajev241/sbx-hermes-telegram-kit:latest
+```
+
+If local ignored files such as `.venv` exist inside a kit directory, stage a clean temporary directory before pushing because `sbx kit push` packages the directory contents.
 
 Optional local tag for development:
 
