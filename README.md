@@ -16,7 +16,7 @@ Use only `hermes` when you want the Hermes terminal agent. Use both kits when yo
 The Hermes kit is configured to use this prebuilt image:
 
 ```text
-docker.io/shelajev/hermes-agent-sbx:0.16.0
+docker.io/olegselajev241/hermes-agent-sbx:0.16.0
 ```
 
 Users of this repo should not need to build the image locally once that image is published.
@@ -123,12 +123,12 @@ The base image is intentionally channel-neutral. Telegram dependencies are insta
 Build and push:
 
 ```bash
-docker build -t docker.io/shelajev/hermes-agent-sbx:0.16.0 ./hermes
-docker push docker.io/shelajev/hermes-agent-sbx:0.16.0
+docker build -t docker.io/olegselajev241/hermes-agent-sbx:0.16.0 ./hermes
+docker push docker.io/olegselajev241/hermes-agent-sbx:0.16.0
 ```
 
 Optional local tag for development:
 
 ```bash
-docker tag docker.io/shelajev/hermes-agent-sbx:0.16.0 local/hermes-agent-sbx:0.16.0
+docker tag docker.io/olegselajev241/hermes-agent-sbx:0.16.0 local/hermes-agent-sbx:0.16.0
 ```

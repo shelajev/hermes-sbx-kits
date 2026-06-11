@@ -10,7 +10,7 @@ The base image is `docker/sandbox-templates:shell-docker` because it already mat
 
 ## Files
 
-- `Dockerfile` builds `docker.io/shelajev/hermes-agent-sbx:0.16.0` for publishing and `local/hermes-agent-sbx:0.16.0` for local development.
+- `Dockerfile` builds `docker.io/olegselajev241/hermes-agent-sbx:0.16.0` for publishing and `local/hermes-agent-sbx:0.16.0` for local development.
 - `spec.yaml` declares the Hermes agent kit entrypoint and network/credential policy.
 - `scripts/install-hermes.sh` is the detailed install script used by the image build.
 - `scripts/test-hermes.sh` builds the image and runs credential-free smoke tests, plus optional real model tests if API keys are present.
