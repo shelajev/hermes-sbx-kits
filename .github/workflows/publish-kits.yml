@@ -3,15 +3,6 @@ name: Publish Kits
 on:
   workflow_dispatch:
     inputs:
-      kit_version:
-        description: "Version tag for kit artifacts"
-        required: true
-        default: "0.16.0"
-      push_latest:
-        description: "Also push the latest tag"
-        required: true
-        type: boolean
-        default: true
       sbx_release:
         description: "docker/sbx-releases tag to install"
         required: true
@@ -47,6 +38,4 @@ jobs:
       - name: Publish kit artifacts
         env:
           DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
-          KIT_VERSION: ${{ inputs.kit_version }}
-          PUSH_LATEST: ${{ inputs.push_latest }}
         run: ./scripts/push-kits.sh

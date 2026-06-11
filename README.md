@@ -75,7 +75,7 @@ Use only `hermes` when you want the Hermes terminal agent. Use both kits when yo
 The Hermes kit is configured to use this prebuilt image:
 
 ```text
-docker.io/olegselajev241/hermes-agent-sbx:0.16.0
+docker.io/olegselajev241/hermes-agent-sbx:latest
 ```
 
 Users of this repo should not need to build the image locally once that image is published.
@@ -207,7 +207,7 @@ The base image is intentionally channel-neutral. Telegram dependencies are insta
 The repository has two manual-only workflows:
 
 - **Publish Kits**: validates and pushes only the SBX kit artifacts.
-- **Release Hermes Image And Kits**: builds and pushes a new Hermes base Docker image, updates the Hermes kit image reference, commits that reference update, then pushes the kit artifacts.
+- **Release Hermes Image And Kits**: builds and pushes a new Hermes base Docker image as `latest`, then pushes the kit artifacts as `latest`.
 
 Required repository secrets:
 
@@ -224,14 +224,12 @@ docker.io/<DOCKERHUB_USERNAME>/sbx-hermes-kit
 docker.io/<DOCKERHUB_USERNAME>/sbx-hermes-telegram-kit
 ```
 
-The image-and-kits workflow uses the built-in `GITHUB_TOKEN` to commit the updated image reference back to the repository. In GitHub repository settings, Actions must have **Read and write permissions**. If branch protection blocks bot pushes, use a manual PR flow or adjust the protection rule.
+The workflows do not need OpenAI, Telegram, or GitHub write secrets. They only push to Docker Hub.
 
 Trigger kits-only publishing:
 
 ```bash
 gh workflow run "Publish Kits" \
-  --field kit_version=0.16.0 \
-  --field push_latest=true \
   --field sbx_release=v0.32.0
 ```
 
@@ -240,17 +238,15 @@ Trigger a Hermes image update plus kit publishing:
 ```bash
 gh workflow run "Release Hermes Image And Kits" \
   --field hermes_version=0.16.0 \
-  --field image_tag=0.16.0 \
   --field platforms=linux/amd64,linux/arm64 \
-  --field push_latest=true \
   --field sbx_release=v0.32.0
 ```
 
 Build and push:
 
 ```bash
-docker build -t docker.io/olegselajev241/hermes-agent-sbx:0.16.0 ./hermes
-docker push docker.io/olegselajev241/hermes-agent-sbx:0.16.0
+docker build -t docker.io/olegselajev241/hermes-agent-sbx:latest ./hermes
+docker push docker.io/olegselajev241/hermes-agent-sbx:latest
 ```
 
 Push kit artifacts:
@@ -264,5 +260,5 @@ Current `sbx kit push` packages directory contents directly and does not honor `
 Optional local tag for development:
 
 ```bash
-docker tag docker.io/olegselajev241/hermes-agent-sbx:0.16.0 local/hermes-agent-sbx:0.16.0
+docker tag docker.io/olegselajev241/hermes-agent-sbx:latest local/hermes-agent-sbx:0.16.0
 ```

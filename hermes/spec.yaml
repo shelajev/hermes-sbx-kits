@@ -5,7 +5,7 @@ displayName: "Hermes Agent"
 description: "Run Nous Research Hermes Agent inside a Docker Sandbox with Hermes preinstalled in the image."
 
 agent:
-  image: "docker.io/olegselajev241/hermes-agent-sbx:0.16.0"
+  image: "docker.io/olegselajev241/hermes-agent-sbx:latest"
   entrypoint:
     run:
       - sh
