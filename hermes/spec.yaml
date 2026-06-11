@@ -1,0 +1,88 @@
+schemaVersion: "1"
+kind: agent
+name: hermes
+displayName: "Hermes Agent"
+description: "Run Nous Research Hermes Agent inside a Docker Sandbox with Hermes preinstalled in the image."
+
+agent:
+  image: "docker.io/shelajev/hermes-agent-sbx:0.16.0"
+  entrypoint:
+    run:
+      - sh
+      - -lc
+      - |
+        set -eu
+        hermes_home="${HERMES_HOME:-/home/agent/.hermes}"
+        provider="${HERMES_INFERENCE_PROVIDER:-openai-api}"
+        model="${HERMES_INFERENCE_MODEL:-gpt-5-mini}"
+        config="$hermes_home/config.yaml"
+
+        mkdir -p "$hermes_home"
+
+        if [ ! -f "$config" ] || ! grep -Eq '^[[:space:]]*provider:[[:space:]]*[^[:space:]]+' "$config"; then
+          hermes config set model.provider "$provider" >/dev/null
+        fi
+
+        if [ ! -f "$config" ] || ! grep -Eq '^[[:space:]]*default:[[:space:]]*[^[:space:]]+' "$config"; then
+          hermes config set model.default "$model" >/dev/null
+        fi
+
+        exec hermes --yolo
+
+environment:
+  variables:
+    HERMES_HOME: "/home/agent/.hermes"
+    IS_SANDBOX: "1"
+    HERMES_TERMINAL_BACKEND: "local"
+    HERMES_INFERENCE_PROVIDER: "openai-api"
+    HERMES_INFERENCE_MODEL: "gpt-5-mini"
+    NO_PROXY: "localhost,127.0.0.1,::1,gateway.docker.internal"
+    no_proxy: "localhost,127.0.0.1,::1,gateway.docker.internal"
+  proxyManaged:
+    - OPENAI_API_KEY
+    - ANTHROPIC_API_KEY
+    - OPENROUTER_API_KEY
+    - GITHUB_TOKEN
+
+credentials:
+  sources:
+    openai:
+      env:
+        - OPENAI_API_KEY
+    anthropic:
+      env:
+        - ANTHROPIC_API_KEY
+    openrouter:
+      env:
+        - OPENROUTER_API_KEY
+    github:
+      env:
+        - GITHUB_TOKEN
+
+network:
+  allowedDomains:
+    - "api.openai.com:443"
+    - "api.anthropic.com:443"
+    - "openrouter.ai:443"
+    - "portal.nousresearch.com:443"
+    - "*.nousresearch.com:443"
+    - "github.com:443"
+    - "api.github.com:443"
+  serviceDomains:
+    api.openai.com: openai
+    api.anthropic.com: anthropic
+    openrouter.ai: openrouter
+    api.github.com: github
+  serviceAuth:
+    openai:
+      headerName: Authorization
+      valueFormat: "Bearer %s"
+    anthropic:
+      headerName: x-api-key
+      valueFormat: "%s"
+    openrouter:
+      headerName: Authorization
+      valueFormat: "Bearer %s"
+    github:
+      headerName: Authorization
+      valueFormat: "Bearer %s"

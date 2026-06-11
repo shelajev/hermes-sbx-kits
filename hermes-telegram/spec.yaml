@@ -1,0 +1,106 @@
+schemaVersion: "1"
+kind: mixin
+name: hermes-telegram
+displayName: "Hermes Telegram"
+description: "Extends the Hermes agent kit with Telegram gateway network access and an idempotent gateway startup hook."
+
+environment:
+  variables:
+    HERMES_TELEGRAM_AUTOSTART: "1"
+    HERMES_TELEGRAM_ENV_FILE: ".sbx/.env"
+    HERMES_TELEGRAM_PACKAGE: "python-telegram-bot[webhooks]==22.6"
+    TELEGRAM_REPLY_TO_MODE: "first"
+
+commands:
+  install:
+    - command: |
+        set -eu
+
+        hermes_python="/home/agent/.local/share/uv/tools/hermes-agent/bin/python"
+        package="${HERMES_TELEGRAM_PACKAGE:-python-telegram-bot[webhooks]==22.6}"
+
+        if [ ! -x "$hermes_python" ]; then
+          echo "Hermes Telegram mixin: Hermes tool Python not found at $hermes_python" >&2
+          exit 1
+        fi
+
+        if "$hermes_python" -c 'import telegram' >/dev/null 2>&1; then
+          echo "Hermes Telegram mixin: python-telegram-bot already installed."
+          exit 0
+        fi
+
+        uv pip install --python "$hermes_python" "$package"
+      user: "1000"
+      description: "Install Telegram gateway dependency into Hermes"
+
+  startup:
+    - command:
+        - sh
+        - -lc
+        - |
+          set -eu
+
+          hermes_home="${HERMES_HOME:-$HOME/.hermes}"
+          log_dir="$hermes_home/logs"
+          log_file="$log_dir/telegram-gateway.log"
+          env_file="$hermes_home/.env"
+          configured_env="${HERMES_TELEGRAM_ENV_FILE:-.sbx/.env}"
+          workspace_root="${WORKSPACE_DIR:-/workspace}"
+
+          case "$configured_env" in
+            /*) workspace_env="$configured_env" ;;
+            *) workspace_env="$workspace_root/$configured_env" ;;
+          esac
+
+          mkdir -p "$log_dir"
+
+          if [ -f "$workspace_env" ]; then
+            set -a
+            . "$workspace_env"
+            set +a
+            echo "Hermes Telegram mixin: loaded $workspace_env." >> "$log_file"
+          fi
+
+          if ! /home/agent/.local/share/uv/tools/hermes-agent/bin/python -c 'import telegram' >/dev/null 2>&1; then
+            {
+              echo "Hermes Telegram mixin: python-telegram-bot is not installed."
+              echo "Check the mixin install logs in /var/log/sbx-kit-install.log."
+            } >> "$log_file"
+            exit 0
+          fi
+
+          has_token=0
+          if [ -n "${TELEGRAM_BOT_TOKEN:-}" ]; then
+            has_token=1
+          elif [ -f "$env_file" ] && grep -Eq '^TELEGRAM_BOT_TOKEN=.+' "$env_file"; then
+            has_token=1
+          fi
+
+          if [ "$has_token" -ne 1 ]; then
+            {
+              echo "Hermes Telegram mixin: no Telegram bot token configured yet."
+              echo "Create $workspace_env on the host, or run 'hermes gateway setup' inside the sandbox."
+              echo "Current SBX proxy-managed credentials inject auth headers; Telegram bot tokens are part of the Bot API URL path, so TELEGRAM_BOT_TOKEN cannot be hidden by that mechanism."
+            } >> "$log_file"
+            exit 0
+          fi
+
+          if pgrep -f 'hermes gateway run' >/dev/null 2>&1; then
+            echo "Hermes Telegram mixin: gateway already running." >> "$log_file"
+            exit 0
+          fi
+
+          nohup hermes gateway run --replace --accept-hooks >> "$log_file" 2>&1 &
+          echo "Hermes Telegram mixin: started gateway as pid $!." >> "$log_file"
+      user: "1000"
+      description: "Start Hermes gateway when Telegram configuration exists"
+
+network:
+  allowedDomains:
+    - "pypi.org:443"
+    - "files.pythonhosted.org:443"
+    - "api.telegram.org:443"
+    - "*.telegram.org:443"
+    - "api.openai.com:443"
+    - "api.anthropic.com:443"
+    - "openrouter.ai:443"
