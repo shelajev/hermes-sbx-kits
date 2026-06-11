@@ -1,0 +1,108 @@
+name: Release Hermes Image And Kits
+
+on:
+  workflow_dispatch:
+    inputs:
+      hermes_version:
+        description: "Hermes Agent version to install in the base image"
+        required: true
+        default: "0.16.0"
+      image_tag:
+        description: "Docker image and kit version tag"
+        required: true
+        default: "0.16.0"
+      push_latest:
+        description: "Also push latest tags for image and kits"
+        required: true
+        type: boolean
+        default: true
+      sbx_release:
+        description: "docker/sbx-releases tag to install"
+        required: true
+        default: "v0.32.0"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install SBX
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SBX_RELEASE: ${{ inputs.sbx_release }}
+        run: |
+          set -euo pipefail
+          gh release download "$SBX_RELEASE" \
+            --repo docker/sbx-releases \
+            --pattern 'DockerSandboxes-linux-amd64-ubuntu2404.deb' \
+            --output /tmp/docker-sandboxes.deb
+          sudo apt-get update
+          sudo apt-get install -y /tmp/docker-sandboxes.deb
+          sbx version
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Hermes base image
+        env:
+          DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
+          HERMES_VERSION: ${{ inputs.hermes_version }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          PUSH_LATEST: ${{ inputs.push_latest }}
+        run: |
+          set -euo pipefail
+          tags=(
+            --tag "docker.io/$DOCKERHUB_NAMESPACE/hermes-agent-sbx:$IMAGE_TAG"
+          )
+          if [ "$PUSH_LATEST" = "true" ]; then
+            tags+=(--tag "docker.io/$DOCKERHUB_NAMESPACE/hermes-agent-sbx:latest")
+          fi
+          docker buildx build \
+            --push \
+            --build-arg "HERMES_VERSION=$HERMES_VERSION" \
+            "${tags[@]}" \
+            ./hermes
+
+      - name: Update kit image reference
+        env:
+          DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -euo pipefail
+          export IMAGE_REF="docker.io/$DOCKERHUB_NAMESPACE/hermes-agent-sbx:$IMAGE_TAG"
+          perl -0pi -e 's#docker\.io/[^/\s]+/hermes-agent-sbx:[0-9A-Za-z._-]+#$ENV{IMAGE_REF}#g' hermes/spec.yaml README.md hermes/README.md
+          sbx kit validate ./hermes
+          sbx kit validate ./hermes-telegram
+
+      - name: Commit image reference update
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- README.md hermes/README.md hermes/spec.yaml; then
+            echo "No image reference changes to commit."
+          else
+            git add README.md hermes/README.md hermes/spec.yaml
+            git commit -m "Update Hermes image to ${{ inputs.image_tag }}"
+            git push
+          fi
+
+      - name: Publish kit artifacts
+        env:
+          DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
+          KIT_VERSION: ${{ inputs.image_tag }}
+          PUSH_LATEST: ${{ inputs.push_latest }}
+        run: ./scripts/push-kits.sh

@@ -185,6 +185,30 @@ Do not commit `.sbx/.env`.
 
 The base image is intentionally channel-neutral. Telegram dependencies are installed by the Telegram mixin.
 
+## Maintainer: GitHub Actions
+
+The repository has two manual-only workflows:
+
+- **Publish Kits**: validates and pushes only the SBX kit artifacts.
+- **Release Hermes Image And Kits**: builds and pushes a new Hermes base Docker image, updates the Hermes kit image reference, commits that reference update, then pushes the kit artifacts.
+
+Required repository secrets:
+
+```text
+DOCKERHUB_USERNAME
+DOCKERHUB_TOKEN
+```
+
+`DOCKERHUB_TOKEN` should be a Docker Hub access token with permission to push to:
+
+```text
+docker.io/<DOCKERHUB_USERNAME>/hermes-agent-sbx
+docker.io/<DOCKERHUB_USERNAME>/sbx-hermes-kit
+docker.io/<DOCKERHUB_USERNAME>/sbx-hermes-telegram-kit
+```
+
+The image-and-kits workflow uses the built-in `GITHUB_TOKEN` to commit the updated image reference back to the repository. In GitHub repository settings, Actions must have **Read and write permissions**. If branch protection blocks bot pushes, use a manual PR flow or adjust the protection rule.
+
 Build and push:
 
 ```bash
@@ -195,13 +219,10 @@ docker push docker.io/olegselajev241/hermes-agent-sbx:0.16.0
 Push kit artifacts:
 
 ```bash
-sbx kit push ./hermes docker.io/olegselajev241/sbx-hermes-kit:0.16.0
-sbx kit push ./hermes docker.io/olegselajev241/sbx-hermes-kit:latest
-sbx kit push ./hermes-telegram docker.io/olegselajev241/sbx-hermes-telegram-kit:0.16.0
-sbx kit push ./hermes-telegram docker.io/olegselajev241/sbx-hermes-telegram-kit:latest
+./scripts/push-kits.sh
 ```
 
-If local ignored files such as `.venv` exist inside a kit directory, stage a clean temporary directory before pushing because `sbx kit push` packages the directory contents.
+Current `sbx kit push` packages directory contents directly and does not honor `.gitignore` or `.dockerignore`. The helper script stages a clean temporary copy before pushing, so local files such as `.sbx/.env` or `.venv` are not included.
 
 Optional local tag for development:
 
