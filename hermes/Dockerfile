@@ -1,6 +1,6 @@
 FROM docker/sandbox-templates:shell-docker
 
-ARG HERMES_VERSION=0.16.0
+ARG HERMES_VERSION=latest
 ARG HERMES_EXTRAS=anthropic,cli,mcp,web
 
 USER root

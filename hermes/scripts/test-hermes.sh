@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE="${IMAGE:-local/hermes-agent-sbx:0.16.0}"
-HERMES_VERSION="${HERMES_VERSION:-0.16.0}"
+IMAGE="${IMAGE:-local/hermes-agent-sbx:latest}"
+HERMES_VERSION="${HERMES_VERSION:-latest}"
 
 docker build \
   --build-arg "HERMES_VERSION=$HERMES_VERSION" \

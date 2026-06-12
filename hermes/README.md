@@ -10,7 +10,7 @@ The base image is `docker/sandbox-templates:shell-docker` because it already mat
 
 ## Files
 
-- `Dockerfile` builds `docker.io/olegselajev241/hermes-agent-sbx:latest` for publishing and `local/hermes-agent-sbx:0.16.0` for local development.
+- `Dockerfile` builds `docker.io/olegselajev241/hermes-agent-sbx:latest` for publishing and `local/hermes-agent-sbx:latest` for local development.
 - `spec.yaml` declares the Hermes agent kit entrypoint and provider-neutral network policy.
 - `scripts/install-hermes.sh` is the detailed install script used by the image build.
 - `scripts/test-hermes.sh` builds the image and runs credential-free smoke tests, plus optional real model tests if API keys are present.
@@ -28,6 +28,13 @@ The credential-free tests should prove that:
 - `hermes --version` works;
 - `hermes --help` works;
 - `hermes doctor` runs and reports expected missing provider configuration.
+
+By default, the image build installs the newest PyPI release of `hermes-agent`.
+Pin a specific release when needed:
+
+```bash
+HERMES_VERSION=0.16.0 ./scripts/test-hermes.sh
+```
 
 ## Current Status
 
@@ -60,14 +67,14 @@ Run these commands from this directory:
 ```bash
 cd /Users/shelajev/ai-contrib/kits/core/hermes
 chmod +x scripts/*.sh
-docker build -t local/hermes-agent-sbx:0.16.0 .
+docker build -t local/hermes-agent-sbx:latest .
 ```
 
 Confirm the image has Hermes installed:
 
 ```bash
-docker run --rm -it local/hermes-agent-sbx:0.16.0 hermes --version
-docker run --rm -it local/hermes-agent-sbx:0.16.0 hermes doctor
+docker run --rm -it local/hermes-agent-sbx:latest hermes --version
+docker run --rm -it local/hermes-agent-sbx:latest hermes doctor
 ```
 
 `hermes doctor` should run even without credentials. It will report expected first-run warnings such as missing provider setup, missing `~/.hermes/.env`, and optional tool dependencies. Those warnings are useful signal: the CLI is installed and Hermes can inspect its runtime.
@@ -78,7 +85,7 @@ To start Hermes directly in Docker:
 docker run --rm -it \
   -v "$PWD:/workspace" \
   -e HERMES_HOME=/home/agent/.hermes \
-  local/hermes-agent-sbx:0.16.0
+  local/hermes-agent-sbx:latest
 ```
 
 Yes, this drops you into Hermes' terminal UI because the image default command is `hermes`.
@@ -90,7 +97,7 @@ docker volume create hermes-home
 docker run --rm -it \
   -v "$PWD:/workspace" \
   -v hermes-home:/home/agent/.hermes \
-  local/hermes-agent-sbx:0.16.0
+  local/hermes-agent-sbx:latest
 ```
 
 For a real model call without running the full interactive setup, pass a provider key and use one-shot mode:
@@ -100,7 +107,7 @@ docker run --rm -it \
   -v "$PWD:/workspace" \
   -e HERMES_HOME=/tmp/hermes \
   -e OPENAI_API_KEY \
-  local/hermes-agent-sbx:0.16.0 \
+  local/hermes-agent-sbx:latest \
   hermes --ignore-user-config --provider openai-api -m "${OPENAI_MODEL:-gpt-5-mini}" \
     -z "Reply with exactly: hermes-ok"
 ```
@@ -112,7 +119,7 @@ docker run --rm -it \
   -v "$PWD:/workspace" \
   -e HERMES_HOME=/tmp/hermes \
   -e ANTHROPIC_API_KEY \
-  local/hermes-agent-sbx:0.16.0 \
+  local/hermes-agent-sbx:latest \
   hermes --ignore-user-config --provider anthropic -m "${ANTHROPIC_MODEL:-claude-3-5-haiku-latest}" \
     -z "Reply with exactly: hermes-ok"
 ```
@@ -124,7 +131,7 @@ docker run --rm -it \
   -v "$PWD:/workspace" \
   -e HERMES_HOME=/tmp/hermes \
   -e OPENROUTER_API_KEY \
-  local/hermes-agent-sbx:0.16.0 \
+  local/hermes-agent-sbx:latest \
   hermes --ignore-user-config --provider openrouter -m "${OPENROUTER_MODEL:-anthropic/claude-3.5-haiku}" \
     -z "Reply with exactly: hermes-ok"
 ```
@@ -153,15 +160,15 @@ This is the path to test the kit as an SBX agent kit rather than as a plain Dock
 1. Build the image locally on the host and load it into the SBX template store:
 
    ```bash
-   docker build -t local/hermes-agent-sbx:0.16.0 .
-   docker save local/hermes-agent-sbx:0.16.0 -o /tmp/hermes-agent-sbx-0.16.0.tar
-   sbx template load /tmp/hermes-agent-sbx-0.16.0.tar
-   rm -f /tmp/hermes-agent-sbx-0.16.0.tar
+   docker build -t local/hermes-agent-sbx:latest .
+   docker save local/hermes-agent-sbx:latest -o /tmp/hermes-agent-sbx-latest.tar
+   sbx template load /tmp/hermes-agent-sbx-latest.tar
+   rm -f /tmp/hermes-agent-sbx-latest.tar
    ```
 
    `docker build` makes the image available to Docker Desktop. `sbx` uses its
    own template image store, so `sbx create`/`sbx run` will otherwise fail with
-   a pull error for `local/hermes-agent-sbx:0.16.0`.
+   a pull error for `local/hermes-agent-sbx:latest`.
 
 2. Set one host-side secret for the provider being tested when using API-key auth.
 
@@ -289,7 +296,7 @@ Use three layers:
 2. Local runtime checks: `hermes doctor`, optionally with `HERMES_HOME=/tmp/hermes` for a clean home.
 3. Provider integration checks: `hermes --ignore-user-config --provider <provider> -m <model> -z "Reply with exactly: hermes-ok"`.
 
-For Hermes v0.16.0, the relevant provider slugs are:
+For current Hermes releases, the relevant provider slugs are:
 
 - `openai-api` for a raw `OPENAI_API_KEY` against `api.openai.com`;
 - `anthropic` for `ANTHROPIC_API_KEY`, `ANTHROPIC_TOKEN`, or compatible Claude credentials;
@@ -309,5 +316,4 @@ through the `anthropic` provider, or Claude-family models through OpenRouter.
 
 - Confirm the final incoming SBX kit spec field for the kit-owned Dockerfile. The current manifest still points at an image tag, while the requested future behavior is that the agent kit can ship or build a final image.
 - Confirm whether a future SBX kit schema restores an explicit persistence field. `sbx` v0.31.0-rc1 rejects `agent.persistence`, so this kit omits it.
-- Decide whether to pin `HERMES_VERSION=0.16.0` or track a Git commit from `NousResearch/hermes-agent`. Pinned PyPI is faster and reproducible; Git gives newest Hermes behavior.
 - Decide which Hermes extras to bake in. The current image includes `anthropic,cli,mcp,web`; broader messaging, browser, and voice extras should only be added if the kit needs those workflows.

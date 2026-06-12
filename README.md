@@ -234,10 +234,11 @@ The base image is intentionally channel-neutral. Telegram dependencies are insta
 
 ## Maintainer: GitHub Actions
 
-The repository has two manual-only workflows:
+The repository has three workflows:
 
 - **Publish Kits**: validates and pushes only the SBX kit artifacts.
 - **Release Hermes Image And Kits**: builds and pushes a new Hermes base Docker image as `latest`, then pushes the kit artifacts as `latest`.
+- **Smoke Hermes Image And Kits**: runs nightly and on demand; builds the Hermes image with the latest Hermes release by default, runs Docker-level smoke tests, installs SBX, and validates all kit manifests without pushing anything.
 
 Required repository secrets:
 
@@ -269,8 +270,16 @@ Trigger a Hermes image update plus kit publishing:
 
 ```bash
 gh workflow run "Release Hermes Image And Kits" \
-  --field hermes_version=0.16.0 \
+  --field hermes_version=latest \
   --field platforms=linux/amd64,linux/arm64 \
+  --field sbx_release=v0.32.0
+```
+
+Trigger the no-push smoke workflow:
+
+```bash
+gh workflow run "Smoke Hermes Image And Kits" \
+  --field hermes_version=latest \
   --field sbx_release=v0.32.0
 ```
 
@@ -292,5 +301,5 @@ Current `sbx kit push` packages directory contents directly and does not honor `
 Optional local tag for development:
 
 ```bash
-docker tag docker.io/olegselajev241/hermes-agent-sbx:latest local/hermes-agent-sbx:0.16.0
+docker tag docker.io/olegselajev241/hermes-agent-sbx:latest local/hermes-agent-sbx:latest
 ```

@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       hermes_version:
-        description: "Hermes Agent version to install in the base image"
+        description: "Hermes Agent version to install in the base image, or latest for newest PyPI release"
         required: true
-        default: "0.16.0"
+        default: "latest"
       platforms:
         description: "Docker platforms to build"
         required: true
