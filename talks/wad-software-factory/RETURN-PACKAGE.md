@@ -1,6 +1,6 @@
 # Return package — WeAreDevelopers software factory
 
-> Real-host follow-up completed: read [CHECKPOINT.md](CHECKPOINT.md) and [HOST-VERIFICATION.md](wad-factory-workshop/HOST-VERIFICATION.md) first. The manually bootstrapped factory works; the packaged attendee launcher has documented blockers. Original implementation claims below retain their original scope.
+> Real-host follow-up completed: read [CHECKPOINT.md](CHECKPOINT.md) and [HOST-VERIFICATION-2.md](wad-factory-workshop/HOST-VERIFICATION-2.md) first. The real environment creation and both launcher entry profiles now pass; remaining distribution and preview-refresh limitations are documented. Original implementation claims below retain their original scope.
 
 Implementation summary. Written for the agent or person who tests this next, and for
 the authoring pass that turns it into GitHub Pages instructions.
@@ -11,7 +11,7 @@ the authoring pass that turns it into GitHub Pages instructions.
 
 | Repository | Path | Revision | Tags |
 |---|---|---|---|
-| **A — host control and distributions** | `wad-factory-workshop/` | `8632c0a` on `main` | delivery and host-verification checkpoint tags (see CHECKPOINT.md) |
+| **A — host control and distributions** | `wad-factory-workshop/` | `7b76f05` on `main` | delivery and host-verification checkpoint tags (see CHECKPOINT.md) |
 | **B — the application** | `incident-triage-board/` | `e15230f` on `main` | `app-00-starter`, `app-01-warmup-solution`, `app-02-feature-solution`, `app-03-defective-candidate`, `app-04-intervention-solution` |
 
 Both are local git repositories with no remote configured. The planning documents in this
