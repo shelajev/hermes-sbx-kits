@@ -56,17 +56,41 @@ second SDK tutorial. The implementation must consume the recipe we teach, rather
 than showing an env file alongside unrelated hardcoded creation flags.
 
 **Exit:** one command can launch a worker for a host-tracked task.
-**Transition:** “Now we can dispatch work. But one worker also checks its own work.”
+**Transition:** “Now we can dispatch work. But how does the worker learn our way of doing it?”
+
+## 2.5. Give the worker our skills: the ACR kit
+
+**Question:** How do we supply our coding policy and reusable skills without pasting
+them into every task prompt?
+
+Introduce kits here, before introducing another agent. Add the ACR kit to the same
+SBX environment recipe. Install one real versioned policy/skill package, inspect the
+instructions materialized for the chosen harness, and give the single agent a small
+request that visibly uses them. For example, have it review the warm-up change against
+one concrete coding rule and name the finding.
+
+Make the layers explicit: the SBX kit installs/configures the ACR capability; ACR
+resolves and materializes the policy/skill package; the agent harness loads those
+instructions. These are guidance for doing the work, not enforced sandbox permissions.
+Installing the ACR CLI alone does not demonstrate skill delivery.
+
+This is a short hands-on checkpoint, not a passing mention. Learners should see the
+recipe diff, the resolved package revision, the generated instructions and their use.
+Use a published package or publish the workshop package before teaching this path;
+the current pre-materialized files remain a labelled recovery option.
+
+**Exit:** the one-agent worker already has our shared skills and coding policy.
+**Transition:** “It knows our conventions. Now let's give it another pair of eyes.”
 
 ## 3. Add another pair of eyes: Pi, kits and templates
 
 **Question:** Can the environment contain more than the assistant it started with?
 
-Add a Pi tooling mixin to the environment and create the next sandbox with both
+Add a Pi tooling mixin beside the ACR kit and create the next sandbox with both
 harnesses. Start Pi manually and ask it to inspect a small change. Learners see that
 installing another agent does not automatically create a team.
 
-Explain the division: the template supplies a prepared filesystem and tools; kits
+Build on the first kit example: the template supplies a prepared filesystem and tools; kits
 compose additional setup, credentials and permissions. Teach the template actually
 used. A custom workshop image can later cache the same tools; participants do not
 need to build that image or install host Docker.
@@ -95,11 +119,11 @@ Use the short, real handoff relay to prove all roles can communicate. Then inspe
 assignment and one review report. Keep the underlying transport supplied; learners
 should not implement message deduplication or a state machine during the workshop.
 
-**Shared instructions belong here.** “They also need the same definition of good
-work.” Add the ACR capability, install one versioned policy package, and inspect the
-instructions the agents receive. A visible review finding can reference that policy.
-This preserves the original skill-distribution lesson without making another long
-chapter. Installing the ACR CLI alone is not the package-distribution proof.
+**Carry the skills forward.** The team keeps the ACR policy introduced in stage 2.5.
+Inspect how each harness receives the same policy alongside its distinct role brief.
+Pi may need explicit instruction materialization; do not assume every harness uses
+the same skill-loading mechanism. We are extending the skilled worker into a team,
+not introducing a second policy system.
 
 **Exit:** a real team whose roles, models and shared instructions are inspectable.
 **Transition:** “The team can work, but its task knowledge is still a copy I put inside.”
@@ -190,9 +214,10 @@ protect the final 25 minutes. Start downloads while introducing the goal and dia
 |---|---|
 | 0–10 | Install, authenticate, orientation, downloads |
 | 10–25 | One agent in SBX; isolation, containers, board port, warm-up |
-| 25–40 | Beans plus short host launcher consuming sbxenv |
-| 40–52 | Pi mixin, template explanation, role/provider mapping |
-| 52–67 | Herdr mixin, real handoff, shared ACR instructions |
+| 25–36 | Beans plus short host launcher consuming sbxenv |
+| 36–43 | First kit: ACR delivers the worker's skills and coding policy |
+| 43–54 | Pi mixin, template explanation, role/provider mapping |
+| 54–67 | Herdr mixin, real handoff; carry shared instructions into the team |
 | 67–82 | MCP task retrieval/write-back and immediate control explanation; main feature runs |
 | 82–95 | SSH intervention, inspect results; finish may continue into open lab |
 | 95–108 | Open lab, catch-up, main-feature completion |
@@ -211,10 +236,11 @@ Preserve the final tested system. Produce intermediate assemblies:
 
 1. One agent; app/environment proof.
 2. One-agent environment driven by a small host task launcher.
-3. Same environment plus Pi tooling kit; manual review.
-4. Plus Herdr/team kit, role map and ACR instructions; real coordination.
-5. Plus host Beans MCP; real task retrieval and restricted result note.
-6. Same team with a recorded human decision, result note and visible code change.
+3. Same worker plus ACR kit; real policy/skill installation and visible use.
+4. Same environment plus Pi tooling kit; manual review with shared instructions.
+5. Plus Herdr/team kit and role map; real coordination.
+6. Plus host Beans MCP; real task retrieval and restricted result note.
+7. Same team with a recorded human decision, result note and visible code change.
 
 Do not expose the complete factory CLI in stage one. Do not rewrite the tested
 transport to make chapter code look small. The environment, kit addition, role mapping
