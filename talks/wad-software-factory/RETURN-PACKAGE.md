@@ -1,5 +1,7 @@
 # Return package — WeAreDevelopers software factory
 
+**New rehearsal entry point:** [progressive workshop chapters](wad-factory-workshop/chapters/README.md), with [actual chapter verification](wad-factory-workshop/chapters/VERIFICATION.md). The historical full-factory delivery below remains preserved. The small ACR policy fork is [shelajev/coding-policy, workshop branch](https://github.com/shelajev/coding-policy/tree/workshop).
+
 > Real-host follow-up completed: read [CHECKPOINT.md](CHECKPOINT.md) and [HOST-VERIFICATION-2.md](wad-factory-workshop/HOST-VERIFICATION-2.md) first. The real environment creation and both launcher entry profiles now pass; remaining distribution and preview-refresh limitations are documented. Original implementation claims below retain their original scope.
 
 > Provider follow-up: [MULTI-PROVIDER-VERIFICATION.md](wad-factory-workshop/MULTI-PROVIDER-VERIFICATION.md) records the real Pi/Claude/Codex handoff pass, Google spending-cap blocker, and SBX API-key/OAuth distinction.

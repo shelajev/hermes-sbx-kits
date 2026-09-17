@@ -1,9 +1,10 @@
 # Workshop story: from one sandboxed agent to a software factory
 
 Story accepted by the author, 2026-09-17; revised to keep the host launcher minimal. This
-supersedes the ordering proposed in `workshop-assessment.md`; it does not change
-implementation or claim that the new intermediate stages already exist. The final
-system remains the working factory checkpoint. This is a planning document, not a
+supersedes the ordering proposed in `workshop-assessment.md`. The progressive
+assemblies now live in `wad-factory-workshop/chapters/`; read their `VERIFICATION.md`
+for measured checks and remaining rehearsal work. The previous full factory is
+preserved at `checkpoint/pre-chapters-20260917`. This is a planning document, not a
 validated speaker-toolkit outline or slide script.
 
 ## Through-line
