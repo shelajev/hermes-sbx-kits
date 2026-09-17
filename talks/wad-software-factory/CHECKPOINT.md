@@ -4,7 +4,7 @@ Both implementation repositories were clean at delivery and are independently co
 
 | Repository | Original delivery | Current revision | Tags |
 |---|---|---|---|
-| wad-factory-workshop | 702a3bbb2652ffe273fc72c0861d8728f65840cc | 7b76f05b1e9032dca32fa026d22d5c48c4225d2d | checkpoint/implementation-delivery-20260916; checkpoint/host-happy-path-20260916; checkpoint/developer-fixes-20260917; checkpoint/host-startup-fixed-20260917 |
+| wad-factory-workshop | 702a3bbb2652ffe273fc72c0861d8728f65840cc | 5aa0895deaad129a3440016218612484ec91b8c9 | checkpoint/implementation-delivery-20260916; checkpoint/host-happy-path-20260916; checkpoint/developer-fixes-20260917; checkpoint/host-startup-fixed-20260917; checkpoint/pre-multi-provider-20260917; checkpoint/multi-provider-smoke-20260917 |
 | incident-triage-board | e15230f28c71e05584c0caf75b6ddec1bbc05b00 | unchanged | checkpoint/implementation-delivery-20260916; all five original app fixture tags |
 
 The workshop verification commit includes small fixes, regression coverage, the real-host report and sanitized evidence. No remote is configured in either repository; nothing was pushed or published. Chapter checkpoint pairs still need resolving after distribution packaging.
@@ -18,6 +18,14 @@ assignee-display assertion. Each export passed 18/18 checks. See
 [the second host report](wad-factory-workshop/HOST-VERIFICATION-2.md) for the actual
 CLI verification, the preserved v2 false-negative, and remaining distribution,
 provider and preview-refresh limitations. The original host report remains historical.
+
+The multi-provider port is checkpointed at `5aa0895`. Herdr's credential setup is
+ported to a dedicated sandbox kit. Pi/Anthropic, Claude/Anthropic and Codex/OpenAI
+completed the file round trip without intervention, including a fresh run through
+`scripts/smoke-crew.sh`. Gemini is blocked by the existing Google project spending
+cap; Codex succeeded in SBX API-key mode, not OAuth. See
+[the provider report](wad-factory-workshop/MULTI-PROVIDER-VERIFICATION.md).
+The application repository and original Claude-only checkpoint are unchanged.
 
 ## Local recovery archives
 
@@ -36,3 +44,7 @@ These ignored files exist locally; they are not remote backups. Both original de
 | `.verification-backup/mcp-second-pass.bundle` | `6bdbe9d741ffc88e1e1bbdb85cd20f5ac8ba446fb8dfe9a8ade768ffb5f6cdd8` |
 
 The second-pass candidate bundles are incremental exports. Verify/fetch them from the preserved app repository, which contains their prerequisite commits; they are not standalone clones.
+
+Recovery bundle: `.verification-backup/workshop-pre-multi-provider.bundle` — SHA-256 `e909f2b0f38887b88e65f89f500a8ce32a9c12e5f32b025f4db03fc7d55191ee`.
+
+Recovery bundle: `.verification-backup/workshop-multi-provider-smoke.bundle` — SHA-256 `d585d82571e8b96d869f0f20eb74eeda1795972fb841814a43a735181c7eeb62`.
