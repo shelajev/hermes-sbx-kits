@@ -1,6 +1,6 @@
 # Workshop story: from one sandboxed agent to a software factory
 
-Working story proposal, 2026-09-17. Based on the author's latest direction. This
+Story accepted by the author, 2026-09-17; revised to keep the host launcher minimal. This
 supersedes the ordering proposed in `workshop-assessment.md`; it does not change
 implementation or claim that the new intermediate stages already exist. The final
 system remains the working factory checkpoint. This is a planning document, not a
@@ -46,7 +46,8 @@ session every time?
 Show one Bean with a concrete task and acceptance criteria. Beans needs a couple of
 commands, not a chapter about issue tracking. A short host script takes that task,
 creates the sandbox from the environment recipe, transfers the private checkout and
-starts the agent. Initially the host supplies a task snapshot; that is an explicit
+starts the agent. It has no scheduler, acceptance state machine, automatic review gate,
+or completion bookkeeping. Initially the host supplies a task snapshot; that is an explicit
 limitation MCP will address later.
 
 Teach `sbxenv` as the reusable composition recipe and show the actual SBX CLI calls
@@ -129,12 +130,14 @@ path already lets agents close tasks.
 
 - Reads retrieve task data; writes change host state.
 - The adapter exposes specific operations against its configured backlog.
-- A note that says “finished” is an agent report, not an accepted implementation.
-- The host checks the exact candidate and then marks the Bean complete.
+- The agents post their result, test outcomes, review findings and commit in a task note.
+- The core workshop ends with that report and the visible working application.
 
-This supplies real host integration without requiring an unrestricted `complete_task`
-operation. If direct MCP completion is later wanted, it should request verified
-completion through the host, not simply let the caller assert success.
+There is no host verification or task-completion gate in the core workshop. Do not
+add a completion tool merely to close the loop: the result note is the loop. Learners
+who want independent verification, approval or automatic task closure can extend the
+factory afterward. Tests and QA still happen inside the team; the host does not run
+a second acceptance workflow.
 
 Local attendees use the deliberately narrow server surface and sandbox access
 controls. Organization-level named-tool policy and audit remain a presenter
@@ -165,10 +168,14 @@ access; a human decision supplies a requirement.
 
 ## 7. Finish a job, then keep using it
 
-QA names the implementation commit. The fixed checks run against that commit inside
-SBX. The host records acceptance, updates Beans, and preserves the exported change.
-Refresh/restart the running preview with migrations so the browser shows the accepted
-feature. That visible result is the final proof of the factory.
+The developer runs the application's tests, QA reviews the change, and the crew posts
+its result through MCP to the Bean. Inspect the note, the code and the running board.
+Refresh/restart the preview with migrations so the browser shows the implemented
+feature. That visible change plus the task note is the final proof of the factory.
+
+No host acceptance command, fixed-check gate, status reconciliation or automatic
+main-branch merge is required. Keep an ordinary documented way to retrieve the code
+from SBX; it does not need a custom export-validation framework.
 
 Give learners a next-task command and time to experiment. The presenter uses the
 remaining slot to extend the same architecture to organizational governance and cloud
@@ -187,7 +194,7 @@ protect the final 25 minutes. Start downloads while introducing the goal and dia
 | 40–52 | Pi mixin, template explanation, role/provider mapping |
 | 52–67 | Herdr mixin, real handoff, shared ACR instructions |
 | 67–82 | MCP task retrieval/write-back and immediate control explanation; main feature runs |
-| 82–95 | SSH intervention, inspect/verify results; finish may continue into open lab |
+| 82–95 | SSH intervention, inspect results; finish may continue into open lab |
 | 95–108 | Open lab, catch-up, main-feature completion |
 | 108–116 | Presenter governance/cloud extensions |
 | 116–120 | Final artifact and next-task command |
@@ -207,9 +214,37 @@ Preserve the final tested system. Produce intermediate assemblies:
 3. Same environment plus Pi tooling kit; manual review.
 4. Plus Herdr/team kit, role map and ACR instructions; real coordination.
 5. Plus host Beans MCP; real task retrieval and restricted result note.
-6. Same team with a recorded human decision and an accepted, visible result.
+6. Same team with a recorded human decision, result note and visible code change.
 
 Do not expose the complete factory CLI in stage one. Do not rewrite the tested
 transport to make chapter code look small. The environment, kit addition, role mapping
 or host connection is the learner-owned change in each stage. Each stage needs one
 command to verify it and a recovery path that preserves their prior work.
+
+## Host launcher scope — explicit author decision
+
+The host launcher is deliberately the smallest component. Its responsibility is:
+
+1. Take a Bean ID (and, if needed, the chosen recipe).
+2. Resolve the task input and sandbox name.
+3. Invoke SBX with the recipe and task input.
+4. Print the sandbox name and the normal inspect/attach commands.
+
+Before MCP, hand over the task snapshot; after MCP, hand over its ID. Use SBX for
+lifecycle and inspection, Beans for task data, and Herdr inside the sandbox for team
+coordination. Do not rebuild those capabilities in a factory CLI.
+
+Target roughly 30–60 readable lines for the host launcher, plus a small declarative
+recipe; this is a design budget, not a promise about unimplemented code. Count its
+required custom helpers too: hiding a thousand lines behind `launch()` does not meet
+the intent. Setup/install and the separately supplied MCP adapter are distinct
+components, not excuses to move orchestration elsewhere.
+
+The existing comprehensive host CLI, acceptance runner and export checks stay in the
+preserved checkpoint as reference material. They are not dependencies of the new
+learner launch path. Retain the in-sandbox communication reliability needed for real
+Herdr sessions; simplification here removes host workflow ownership.
+
+This decision overrides earlier recommendations in the planning brief, implementation
+prompt and assessment that made host verification/acceptance mandatory. A future
+implementation handoff must use this updated scope rather than reinstating those gates.
